@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLASSIFIED — Admin Application Portal</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg-secondary: #111119;
+    --card: #14141f;
+    --card-hover: #1a1a2a;
+    --border: #2a2a3a;
+    --fg: #e8e8f0;
+    --muted: #6a6a80;
+    --accent: #ff3c5f;
+    --accent-glow: rgba(255, 60, 95, 0.3);
+    --accent-secondary: #ff8c42;
+    --success: #00e87b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  .font-display { font-family: 'Orbitron', monospace; }
+  .grid-bg {
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(255,60,95,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,60,95,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    animation: gridMove 20s linear infinite;
+  }
+  @keyframes gridMove { 0% { transform: translate(0,0); } 100% { transform: translate(60px,60px); } }
+  .particle {
+    position: fixed; border-radius: 50%; pointer-events: none; z-index: 1;
+    animation: floatParticle linear infinite;
+  }
+  @keyframes floatParticle {
+    0% { transform: translateY(100vh) scale(0); opacity: 0; }
+    10% { opacity: 1; } 90% { opacity: 1; }
+    100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+  }
+  .scanline {
+    position: fixed; inset: 0; z-index: 2; pointer-events: none;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+  }
+  .classified-stamp {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%,-50%) rotate(-25deg);
+    font-family: 'Orbitron', monospace; font-size: 8rem; font-weight: 900;
+    color: rgba(255,60,95,0.04); white-space: nowrap;
+    pointer-events: none; z-index: 1; letter-spacing: 0.3em; user-select: none;
+  }
+  .glow-blob {
+    position: fixed; width: 500px; height: 500px; border-radius: 50%;
+    filter: blur(150px); opacity: 0.15; pointer-events: none; z-index: 0;
+  }
+  .glow-blob-1 { background: var(--accent); top: -200px; right: -100px; animation: blobPulse 8s ease-in-out infinite; }
+  .glow-blob-2 { background: var(--accent-secondary); bottom: -200px; left: -100px; animation: blobPulse 10s ease-in-out infinite reverse; }
+  @keyframes blobPulse { 0%,100% { transform: scale(1); opacity: 0.12; } 50% { transform: scale(1.3); opacity: 0.2; } }
+  .form-input {
+    width: 100%; background: var(--bg-secondary); border: 1px solid var(--border);
+    color: var(--fg); padding: 14px 18px; border-radius: 8px;
+    font-family: 'Space Grotesk', sans-serif; font-size: 15px;
+    transition: all 0.3s ease; outline: none;
+  }
+  .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow), 0 0 20px var(--accent-glow); }
+  .form-input::placeholder { color: var(--muted); font-style: italic; }
+  select.form-input {
+    cursor: pointer; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236a6a80' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 16px center; padding-right: 40px;
+  }
+  select.form-input option { background: var(--bg-secondary); color: var(--fg); }
+  textarea.form-input { resize: vertical; min-height: 120px; line-height: 1.6; }
+  .form-label { display: block; font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 8px; }
+  .form-label .required { color: var(--accent); margin-left: 4px; }
+  .section-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 36px; position: relative;
+    overflow: hidden; transition: all 0.4s ease;
+  }
+  .section-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0; transition: opacity 0.4s ease;
+  }
+  .section-card:hover::before { opacity: 1; }
+  .section-card:hover { border-color: rgba(255,60,95,0.2); background: var(--card-hover); }
+  .btn-submit {
+    position: relative; display: inline-flex; align-items: center; gap: 12px;
+    padding: 18px 48px; background: linear-gradient(135deg, var(--accent), #cc2244);
+    color: white; font-family: 'Orbitron', monospace;
+    font-size: 14px; font-weight: 700; letter-spacing: 0.15em;
+    text-transform: uppercase; border: none; border-radius: 12px;
+    cursor: pointer; overflow: hidden; transition: all 0.3s ease;
+  }
+  .btn-submit::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.15) 50%, transparent 70%);
+    transform: translateX(-100%); transition: transform 0.6s ease;
+  }
+  .btn-submit:hover::before { transform: translateX(100%); }
+  .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--accent-glow), 0 0 60px rgba(255,60,95,0.15); }
+  .btn-submit:active { transform: translateY(0); }
+  .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+  .custom-check {
+    display: flex; align-items: flex-start; gap: 12px; cursor: pointer;
+    padding: 12px 16px; border-radius: 8px; transition: background 0.2s ease; user-select: none;
+  }
+  .custom-check:hover { background: rgba(255,255,255,0.03); }
+  .custom-check input { display: none; }
+  .check-box {
+    flex-shrink: 0; width: 22px; height: 22px; border: 2px solid var(--border);
+    border-radius: 5px; display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s ease; margin-top: 1px;
+  }
+  .custom-check input:checked + .check-box { background: var(--accent); border-color: var(--accent); }
+  .custom-check input:checked + .check-box::after { content: '\2713'; color: white; font-size: 14px; font-weight: 700; }
+  .progress-track { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-secondary)); border-radius: 2px; transition: width 0.5s ease; width: 0%; }
+  .toast {
+    position: fixed; bottom: 30px; right: 30px; padding: 18px 28px; border-radius: 12px;
+    font-size: 14px; font-weight: 500; z-index: 1000; transform: translateY(120px); opacity: 0;
+    transition: all 0.4s cubic-bezier(0.22,1,0.36,1);
+    display: flex; align-items: center; gap: 12px; max-width: 420px; backdrop-filter: blur(20px);
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast-error { background: rgba(255,60,95,0.15); border: 1px solid rgba(255,60,95,0.3); color: #ff8fa3; }
+  .toast-success { background: rgba(0,232,123,0.12); border: 1px solid rgba(0,232,123,0.3); color: #66f5aa; }
+  .typing-cursor { display: inline-block; width: 2px; height: 1.1em; background: var(--accent); margin-left: 2px; animation: blink 1s step-end infinite; vertical-align: text-bottom; }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+  .reveal { opacity: 0; transform: translateY(30px); transition: all 0.7s cubic-bezier(0.22,1,0.36,1); }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .warning-banner {
+    background: linear-gradient(90deg, rgba(255,140,66,0.1), rgba(255,60,95,0.1), rgba(255,140,66,0.1));
+    border: 1px solid rgba(255,140,66,0.2); border-radius: 12px;
+    padding: 16px 20px; display: flex; align-items: flex-start; gap: 12px;
+    font-size: 13px; line-height: 1.6; color: #ffb88c;
+  }
+  .stat-box {
+    text-align: center; padding: 20px; border-radius: 12px;
+    background: rgba(255,255,255,0.02); border: 1px solid var(--border); transition: all 0.3s ease;
+  }
+  .stat-box:hover { border-color: rgba(255,60,95,0.3); background: rgba(255,60,95,0.03); }
+  .char-count { text-align: right; font-size: 12px; color: var(--muted); margin-top: 4px; transition: color 0.3s ease; }
+  .char-count.warning { color: var(--accent-secondary); }
+  .char-count.danger { color: var(--accent); }
+  .success-overlay {
+    position: fixed; inset: 0; z-index: 999; background: rgba(10,10,15,0.95);
+    backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 24px; opacity: 0; pointer-events: none; transition: opacity 0.5s ease;
+  }
+  .success-overlay.active { opacity: 1; pointer-events: all; }
+  .success-icon {
+    width: 100px; height: 100px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), #cc2244);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 48px; animation: successPop 0.6s cubic-bezier(0.22,1,0.36,1) forwards; transform: scale(0);
+  }
+  @keyframes successPop { 0% { transform: scale(0) rotate(-20deg); } 100% { transform: scale(1) rotate(0); } }
+  .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); animation: pulseDot 2s ease-in-out infinite; }
+  @keyframes pulseDot { 0%,100% { box-shadow: 0 0 0 0 rgba(0,232,123,0.4); } 50% { box-shadow: 0 0 0 8px rgba(0,232,123,0); } }
+  .stepper {
+    display: flex; align-items: center; gap: 0;
+    border: 1px solid var(--border); border-radius: 8px; overflow: hidden; width: fit-content;
+  }
+  .stepper button {
+    background: var(--bg-secondary); border: none; color: var(--fg);
+    width: 44px; height: 48px; font-size: 18px; cursor: pointer;
+    transition: all 0.2s ease; display: flex; align-items: center; justify-content: center;
+  }
+  .stepper button:hover { background: var(--card-hover); color: var(--accent); }
+  .stepper .stepper-value {
+    width: 70px; text-align: center; background: var(--bg-secondary);
+    height: 48px; line-height: 48px; font-weight: 600; font-size: 16px;
+    border-left: 1px solid var(--border); border-right: 1px solid var(--border); color: var(--fg);
+  }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+  @media (max-width: 768px) {
+    .section-card { padding: 24px 18px; }
+    .classified-stamp { font-size: 3.5rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,*::before,*::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+<div class="scanline"></div>
+<div class="classified-stamp">CLASSIFIED</div>
+<div class="glow-blob glow-blob-1"></div>
+<div class="glow-blob glow-blob-2"></div>
+<div id="particles"></div>
+<div id="toast" class="toast"></div>
+
+<div id="successOverlay" class="success-overlay">
+  <div class="success-icon"><i class="fas fa-shield-halved" style="color:white"></i></div>
+  <h2 class="font-display text-2xl md:text-3xl font-bold text-center px-6" style="color:var(--fg);" id="successTitle">APPLICATION TRANSMITTED</h2>
+  <p class="text-center px-6 max-w-md" style="color:var(--muted);line-height:1.7;" id="successText">Your application has been securely encrypted and forwarded to the High Council. Expect a response within 3-47 business days.</p>
+  <div id="successWebhookNote" class="flex items-center gap-3 mt-2" style="display:none;">
+    <div class="pulse-dot"></div>
+    <span style="color:var(--success);font-size:13px;font-weight:500;">SENT TO DISCORD VIA WEBHOOK</span>
+  </div>
+  <div id="successFailNote" class="flex items-center gap-3 mt-2" style="display:none;">
+    <i class="fas fa-triangle-exclamation" style="color:var(--accent-secondary);"></i>
+    <span style="color:var(--accent-secondary);font-size:13px;font-weight:500;" id="failText">Failed to send</span>
+  </div>
+  <button onclick="resetApplication()" style="margin-top:16px;padding:12px 32px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:14px;transition:all 0.3s ease;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--fg)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">Submit Another Application</button>
+</div>
+
+<main class="relative z-10 max-w-3xl mx-auto px-5 py-12 md:py-20">
+
+  <header class="text-center mb-16 reveal" id="header">
+    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6" style="background:rgba(255,60,95,0.08);border:1px solid rgba(255,60,95,0.15);">
+      <div class="pulse-dot" style="width:6px;height:6px;"></div>
+      <span style="color:var(--accent);font-size:12px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;" id="statusText">Accepting Applications</span>
+    </div>
+    <h1 class="font-display font-900 text-4xl md:text-6xl leading-tight mb-5" style="letter-spacing:-0.02em;">
+      ADMIN<br>
+      <span style="background:linear-gradient(135deg,var(--accent),var(--accent-secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">APPLICATION</span>
+    </h1>
+    <p style="color:var(--muted);font-size:16px;line-height:1.7;max-width:500px;margin:0 auto;">
+      <span id="typedText"></span><span class="typing-cursor"></span>
+    </p>
+  </header>
+
+  <div class="grid grid-cols-3 gap-4 mb-12 reveal" id="statsRow">
+    <div class="stat-box">
+      <div class="font-display font-bold text-2xl" style="color:var(--accent);" data-count="0.3">0%</div>
+      <div style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:0.1em;margin-top:4px;">Acceptance Rate</div>
+    </div>
+    <div class="stat-box">
+      <div class="font-display font-bold text-2xl" style="color:var(--accent-secondary);" data-count="2847">0</div>
+      <div style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:0.1em;margin-top:4px;">Applications</div>
+    </div>
+    <div class="stat-box">
+      <div class="font-display font-bold text-2xl" style="color:var(--success);" data-count="3">0</div>
+      <div style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:0.1em;margin-top:4px;">Positions Open</div>
+    </div>
+  </div>
+
+  <div class="mb-12 reveal" id="progressSection">
+    <div class="flex justify-between items-center mb-2">
+      <span style="color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Completion</span>
+      <span style="color:var(--fg);font-size:13px;font-weight:600;" id="progressPercent">0%</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+
+  <div class="warning-banner mb-10 reveal" id="warningBanner">
+    <i class="fas fa-triangle-exclamation" style="color:var(--accent-secondary);margin-top:2px;flex-shrink:0;"></i>
+    <div><strong>WARNING:</strong> Falsifying any information on this application will result in an immediate permanent ban, a raid on your server, and your Discord account being publicly displayed on our wall of shame.</div>
+  </div>
+
+  <form id="appForm" novalidate>
+
+    <section class="section-card mb-6 reveal" id="sec1">
+      <div class="flex items-center gap-3 mb-8">
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center font-display font-bold text-sm" style="background:rgba(255,60,95,0.1);color:var(--accent);border:1px solid rgba(255,60,95,0.2);">01</div>
+        <div>
+          <h2 class="font-display font-bold text-lg" style="letter-spacing:0.05em;">OPERATIVE IDENTITY</h2>
+          <p style="color:var(--muted);font-size:13px;">Basic identification protocols</p>
+        </div>
+      </div>
+      <div class="grid md:grid-cols-2 gap-5 mb-5">
+        <div>
+          <label class="form-label">Discord Username <span class="required">*</span></label>
+          <input type="text" class="form-input" id="discord" placeholder="username#0000" data-required autocomplete="off">
+        </div>
+        <div>
+          <label class="form-label">Display Name</label>
+          <input type="text" class="form-input" id="displayName" placeholder="What you go by" autocomplete="off">
+        </div>
+      </div>
+      <div class="grid md:grid-cols-2 gap-5 mb-5">
+        <div>
+          <label class="form-label">Age <span class="required">*</span></label>
+          <input type="number" class="form-input" id="age" placeholder="Must be 18+" min="18" max="99" data-required>
+        </div>
+        <div>
+          <label class="form-label">Gender Identity <span class="required">*</span></label>
+          <select class="form-input" id="gender" data-required>
+            <option value="" disabled selected>Select...</option>
+            <option value="e-kitten">E-Kitten (Fast Track)</option>
+            <option value="male">Male (Enhanced Vetting)</option>
+            <option value="other">Other</option>
+            <option value="classified">Prefer Not To Disclose</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="form-label">Timezone <span class="required">*</span></label>
+        <select class="form-input" id="timezone" data-required>
+          <option value="" disabled selected>Select your timezone...</option>
+          <option value="UTC-8">UTC-08:00 (PST)</option>
+          <option value="UTC-7">UTC-07:00 (MST)</option>
+          <option value="UTC-6">UTC-06:00 (CST)</option>
+          <option value="UTC-5">UTC-05:00 (EST)</option>
+          <option value="UTC+0">UTC+00:00 (GMT)</option>
+          <option value="UTC+1">UTC+01:00 (CET)</option>
+          <option value="UTC+2">UTC+02:00 (EET)</option>
+          <option value="UTC+3">UTC+03:00 (Moscow)</option>
+          <option value="UTC+5.5">UTC+05:30 (IST)</option>
+          <option value="UTC+7">UTC+07:00 (ICT)</option>
+          <option value="UTC+8">UTC+08:00 (CST/SGT)</option>
+          <option value="UTC+9">UTC+09:00 (JST/KST)</option>
+          <option value="UTC+10">UTC+10:00 (AEST)</option>
+          <option value="UTC+12">UTC+12:00 (NZST)</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="section-card mb-6 reveal" id="sec2">
+      <div class="flex items-center gap-3 mb-8">
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center font-display font-bold text-sm" style="background:rgba(255,140,66,0.1);color:var(--accent-secondary);border:1px solid rgba(255,140,66,0.2);">02</div>
+        <div>
+          <h2 class="font-display font-bold text-lg" style="letter-spacing:0.05em;">EXPERIENCE DOSSIER</h2>
+          <p style="color:var(--muted);font-size:13px;">Verify your operational history</p>
+        </div>
+      </div>
+      <div class="mb-5">
+        <label class="form-label">Years of Discord Moderation Experience <span class="required">*</span></label>
+        <div class="stepper">
+          <button type="button" onclick="adjustYears(-1)"><i class="fas fa-minus"></i></button>
+          <div class="stepper-value" id="yearsValue">9</div>
+          <button type="button" onclick="adjustYears(1)"><i class="fas fa-plus"></i></button>
+        </div>
+        <input type="hidden" id="yearsExp" value="9">
+        <p style="color:var(--muted);font-size:12px;margin-top:8px;" id="yearsNote">Note: Minimum 10 years required for male applicants.</p>
+      </div>
+      <div class="mb-5">
+        <label class="form-label">Highest Level of Education <span class="required">*</span></label>
+        <select class="form-input" id="education" data-required>
+          <option value="" disabled selected>Select your degree...</option>
+          <option value="B.S. Discord Engineering">B.S. in Discord Engineering</option>
+          <option value="B.S. Cyber Management">B.S. in Cyber Management</option>
+          <option value="B.S. Advanced Server Architecture">B.S. in Advanced Server Architecture</option>
+          <option value="M.S. Meme Diplomacy">M.S. in Meme Diplomacy</option>
+          <option value="M.S. Psychological Warfare">M.S. in Psychological Warfare</option>
+          <option value="Ph.D. Quantum-Level Moderation">Ph.D. in Quantum-Level Moderation</option>
+          <option value="Ph.D. E-Girl Communication Studies">Ph.D. in E-Girl Communication Studies</option>
+          <option value="None">None (Good luck with that)</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="mb-5">
+        <label class="form-label">List Servers You've Administered <span class="required">*</span></label>
+        <textarea class="form-input" id="servers" placeholder="Server names, member counts, your role, duration of service." data-required maxlength="800"></textarea>
+        <div class="char-count" id="serversCount">0 / 800</div>
+      </div>
+      <div>
+        <label class="form-label">Describe Your Most Complex Moderation Scenario <span class="required">*</span></label>
+        <textarea class="form-input" id="scenario" placeholder="Raids, coup attempts, server civil wars, rogue bot uprisings..." data-required maxlength="1500" style="min-height:150px;"></textarea>
+        <div class="char-count" id="scenarioCount">0 / 1500</div>
+      </div>
+    </section>
+
+    <section class="section-card mb-6 reveal" id="sec3">
+      <div class="flex items-center gap-3 mb-8">
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center font-display font-bold text-sm" style="background:rgba(0,232,123,0.1);color:var(--success);border:1px solid rgba(0,232,123,0.2);">03</div>
+        <div>
+          <h2 class="font-display font-bold text-lg" style="letter-spacing:0.05em;">CERTIFICATIONS & SKILLS</h2>
+          <p style="color:var(--muted);font-size:13px;">Select all that apply</p>
+        </div>
+      </div>
+      <div class="grid md:grid-cols-2 gap-1 mb-6">
+        <label class="custom-check"><input type="checkbox" name="certs" value="Nitro Engineering"><span class="check-box"></span><span style="font-size:14px;line-height:1.5;">Nitro Engineering</span></label>
+        <label class="custom-check"><input type="checkbox" name="certs" value="Emoji Science"><span class="check-box"></span><span style="font-size:14px;line-height:1.5;">Emoji Science</span></label>
+        <label class="custom-check"><input type="checkbox" name="certs" value="E-Girl Communication Studies"><span class="check-box"></span><span style="font-size:14px;line-height:1.5;">E-Girl Communication Studies</span></label>
+        <label class="custom-check"><input type="checkbox" name="certs" value="Quantum-Level Moderation"><span class="check-box"></span><span style="font-size:14px;line-height:1.5;">Quantum-Level Moderation</span></label>
+        <label class="custom-check"><input type="checkbox" name="certs" value="Advanced Ticket Mechanics"><span class="check-box"></span><span style="font-size:14px;line-height:1.5;">Advanced Ticket Mechanics</span></label>
+        <label class="custom-check"><input type="checkbox" name="certs" value="Meme Diplomacy"><span class="check-box"></span><span style="font-size:14px;line-height:1.5;">Meme Diplomacy</span></label>
+        <label class="custom-check"><input type="checkbox" name="certs" value="Psychological Warfare"><span class="check-box"></span><span style="font-size:14px;line-height:1.5;">Psychological Warfare</span></label>
+        <label class="custom-check"><input type="checkbox" name="certs" value="12-Hour VC Endurance"><span class="check-box"></span><span style="font-size:14px;line-height:1.5;">12-Hour VC Endurance</span></label>
+        <label class="custom-check"><input type="checkbox" name="certs" value="@everyone Management"><span class="check-box"></span><span style="font-size:14px;line-height:1.5;">@everyone Management</span></label>
+        <label class="custom-check"><input type="checkbox" name="certs" value="Rogue Bot Taming"><span class="check-box"></span><span style="font-size:14px;line-height:1.5;">Rogue Bot Taming</span></label>
+      </div>
+      <div>
+        <label class="form-label">Additional Certifications or Skills</label>
+        <textarea class="form-input" id="extraCerts" placeholder="Custom bots, servers saved from nuclear drama, etc." maxlength="600" style="min-height:100px;"></textarea>
+        <div class="char-count" id="extraCertsCount">0 / 600</div>
+      </div>
+    </section>
+
+    <section class="section-card mb-6 reveal" id="sec4">
+      <div class="flex items-center gap-3 mb-8">
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center font-display font-bold text-sm" style="background:rgba(255,60,95,0.1);color:var(--accent);border:1px solid rgba(255,60,95,0.2);">04</div>
+        <div>
+          <h2 class="font-display font-bold text-lg" style="letter-spacing:0.05em;">STRESS EVALUATION</h2>
+          <p style="color:var(--muted);font-size:13px;">Situational readiness assessment</p>
+        </div>
+      </div>
+      <div class="mb-6">
+        <label class="form-label">Scenario 1: A 50K member server gets raided at 3 AM. You're the only admin online. What do you do? <span class="required">*</span></label>
+        <textarea class="form-input" id="stress1" placeholder="Technical and strategic response..." data-required maxlength="1000"></textarea>
+        <div class="char-count" id="stress1Count">0 / 1000</div>
+      </div>
+      <div class="mb-6">
+        <label class="form-label">Scenario 2: Two popular e-girls start a civil war. Half the server takes sides. Restore order? <span class="required">*</span></label>
+        <textarea class="form-input" id="stress2" placeholder="Diplomacy, de-escalation, or tactical split..." data-required maxlength="1000"></textarea>
+        <div class="char-count" id="stress2Count">0 / 1000</div>
+      </div>
+      <div class="mb-6">
+        <label class="form-label">Scenario 3: 12-hour VC. Voice gone, eyes bleeding, but a critical @everyone needs to go out. Your move? <span class="required">*</span></label>
+        <textarea class="form-input" id="stress3" placeholder="Endurance and professionalism under extreme conditions." data-required maxlength="1000"></textarea>
+        <div class="char-count" id="stress3Count">0 / 1000</div>
+      </div>
+      <div>
+        <label class="form-label">Longest Continuous VC Session (Hours) <span class="required">*</span></label>
+        <div class="stepper">
+          <button type="button" onclick="adjustVC(-1)"><i class="fas fa-minus"></i></button>
+          <div class="stepper-value" id="vcValue">0</div>
+          <button type="button" onclick="adjustVC(1)"><i class="fas fa-plus"></i></button>
+        </div>
+        <input type="hidden" id="vcHours" value="0">
+      </div>
+    </section>
+
+    <section class="section-card mb-10 reveal" id="sec5">
+      <div class="flex items-center gap-3 mb-8">
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center font-display font-bold text-sm" style="background:rgba(255,140,66,0.1);color:var(--accent-secondary);border:1px solid rgba(255,140,66,0.2);">05</div>
+        <div>
+          <h2 class="font-display font-bold text-lg" style="letter-spacing:0.05em;">LOYALTY OATH</h2>
+          <p style="color:var(--muted);font-size:13px;">Final binding agreements</p>
+        </div>
+      </div>
+      <div class="space-y-2 mb-6">
+        <label class="custom-check"><input type="checkbox" id="oath1" data-required><span class="check-box"></span><span style="font-size:14px;line-height:1.5;">I swear unwavering loyalty to the server and its administration. <span style="color:var(--accent);">*</span></span></label>
+        <label class="custom-check"><input type="checkbox" id="oath2" data-required><span class="check-box"></span><span style="font-size:14px;line-height:1.5;">I will not abuse my admin powers, even if an e-kitten asks nicely. <span style="color:var(--accent);">*</span></span></label>
+        <label class="custom-check"><input type="checkbox" id="oath3" data-required><span class="check-box"></span><span style="font-size:14px;line-height:1.5;">I understand that misuse of @everyone is a punishable offense under server law. <span style="color:var(--accent);">*</span></span></label>
+        <label class="custom-check"><input type="checkbox" id="oath4" data-required><span class="check-box"></span><span style="font-size:14px;line-height:1.5;">I will attend all late-night staff meetings, even if they last until sunrise. <span style="color:var(--accent);">*</span></span></label>
+        <label class="custom-check"><input type="checkbox" id="oath5"><span class="check-box"></span><span style="font-size:14px;line-height:1.5;">I have read and understood the classified server constitution (just kidding, there isn't one).</span></label>
+      </div>
+      <div>
+        <label class="form-label">Why should we choose you over every other applicant? <span class="required">*</span></label>
+        <textarea class="form-input" id="finalPitch" placeholder="This is your final impression. Make it count." data-required maxlength="1200" style="min-height:140px;"></textarea>
+        <div class="char-count" id="finalPitchCount">0 / 1200</div>
+      </div>
+    </section>
+
+    <div class="text-center reveal" id="submitSection">
+      <button type="submit" class="btn-submit" id="submitBtn">
+        <i class="fas fa-paper-plane"></i>
+        <span>TRANSMIT APPLICATION</span>
+      </button>
+      <p style="color:var(--muted);font-size:12px;margin-top:16px;">
+        <i class="fas fa-lock" style="margin-right:4px;"></i>
+        256-bit encryption enabled. Your data is safe. Probably.
+      </p>
+    </div>
+
+  </form>
+
+  <footer class="text-center mt-20 pt-10 reveal" style="border-top:1px solid var(--border);" id="footer">
+    <p style="color:var(--muted);font-size:12px;line-height:1.8;">
+      <span class="font-display" style="color:var(--accent);font-size:11px;letter-spacing:0.15em;">CLASSIFIED ADMIN DIVISION</span><br>
+      Unauthorized access to this application portal is a violation of server protocol.<br>
+      All applications become property of the High Council upon submission.
+    </p>
+  </footer>
+
+</main>
+
+<script>
+/* ===== hi reversing faggot===== */
+const WEBHOOK_URL = 'https://discord.com/api/webhooks/1519312077808730167/vpvILLr8nH798UY16-akWg8-3nJTgCtdgVqckdablqxiKD3NocbzpQ5_mxxIEOdkU0N4';
+
+async function sendToWebhook(data) {
+  const certs = [];
+  document.querySelectorAll('input[name="certs"]:checked').forEach(function(cb) { certs.push(cb.value); });
+
+  const embedColor = data.gender === 'e-kitten' ? 0xff8c42 : 0xff3c5f;
+
+  var embed = {
+    title: data.gender === 'e-kitten' ? 'NEW APPLICATION \u2014 E-KITTEN FAST TRACK' : 'NEW ADMIN APPLICATION',
+    description: '**' + data.discord + '** (' + (data.displayName || 'No display name') + ') is applying for admin.',
+    color: embedColor,
+    fields: [
+      { name: 'Discord', value: data.discord, inline: true },
+      { name: 'Age', value: String(data.age), inline: true },
+      { name: 'Gender', value: data.gender, inline: true },
+      { name: 'Timezone', value: data.timezone, inline: true },
+      { name: 'Experience', value: data.years + ' years', inline: true },
+      { name: 'Education', value: data.education, inline: true },
+      { name: 'VC Endurance', value: data.vcHours + ' hours', inline: true },
+      { name: 'Servers Administered', value: data.servers || 'Not provided', inline: false },
+      { name: 'Complex Scenario', value: data.scenario || 'Not provided', inline: false }
+    ],
+    footer: { text: 'Admin Application Portal' },
+    timestamp: new Date().toISOString()
+  };
+
+  if (certs.length > 0) {
+    embed.fields.push({ name: 'Certifications (' + certs.length + ')', value: certs.map(function(c) { return '\u2022 ' + c; }).join('\n'), inline: false });
+  }
+  if (data.extraCerts) {
+    embed.fields.push({ name: 'Additional Skills', value: data.extraCerts, inline: false });
+  }
+
+  var stressEmbed = {
+    title: 'Stress Evaluation Responses',
+    color: 0xff8c42,
+    fields: [
+      { name: 'Scenario 1: 3AM Raid', value: data.stress1, inline: false },
+      { name: 'Scenario 2: Civil War', value: data.stress2, inline: false },
+      { name: 'Scenario 3: 12hr VC', value: data.stress3, inline: false },
+      { name: 'Final Pitch', value: data.finalPitch, inline: false }
+    ],
+    timestamp: new Date().toISOString()
+  };
+
+  try {
+    var res = await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: 'Admin Applications',
+        avatar_url: 'https://cdn.discordapp.com/embed/avatars/0.png',
+        embeds: [embed, stressEmbed]
+      })
+    });
+    if (res.ok) return { ok: true };
+    var errData = await res.json().catch(function() { return {}; });
+    return { ok: false, error: errData.message || 'HTTP ' + res.status };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+}
+
+/* ===== ЧАСТИЦЫ ===== */
+(function() {
+  var c = document.getElementById('particles');
+  for (var i = 0; i < 25; i++) {
+    var p = document.createElement('div');
+    p.className = 'particle';
+    var s = Math.random() * 3 + 1;
+    var h = Math.random() > 0.5 ? '355' : '25';
+    p.style.cssText = 'width:' + s + 'px;height:' + s + 'px;left:' + (Math.random()*100) + '%;background:hsla(' + h + ',100%,65%,' + (Math.random()*0.4+0.1) + ');animation-duration:' + (Math.random()*15+10) + 's;animation-delay:' + (Math.random()*15) + 's;box-shadow:0 0 ' + (s*3) + 'px hsla(' + h + ',100%,65%,0.3);';
+    c.appendChild(p);
+  }
+})();
+
+/* ===== ТИПИНГ ===== */
+(function() {
+  var text = "Only the strongest will ascend to the admin panel.";
+  var el = document.getElementById('typedText');
+  var i = 0;
+  function t() { if (i < text.length) { el.textContent += text.charAt(i); i++; setTimeout(t, 35 + Math.random() * 30); } }
+  setTimeout(t, 800);
+})();
+
+/* ===== SCROLL REVEAL ===== */
+var obs = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e, i) { if (e.isIntersecting) { setTimeout(function() { e.target.classList.add('visible'); }, i * 80); obs.unobserve(e.target); } });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(function(el) { obs.observe(el); });
+
+/* ===== СЧЁТЧИКИ СТАТОВ ===== */
+(function() {
+  var io = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
+      if (e.isIntersecting) {
+        var el = e.target, target = parseFloat(el.dataset.count), isF = target < 1, start = performance.now();
+        function tick(now) {
+          var p = Math.min((now - start) / 2000, 1), v = target * (1 - Math.pow(1 - p, 3));
+          el.textContent = isF ? v.toFixed(1) + '%' : Math.floor(v).toLocaleString();
+          if (p < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+        io.unobserve(el);
+      }
+    });
+  }, { threshold: 0.5 });
+  document.querySelectorAll('[data-count]').forEach(function(s) { io.observe(s); });
+})();
+
+/* ===== СТЕППЕРЫ ===== */
+function adjustYears(d) {
+  var inp = document.getElementById('yearsExp'), disp = document.getElementById('yearsValue');
+  var v = Math.max(0, Math.min(50, parseInt(inp.value) + d));
+  inp.value = v; disp.textContent = v;
+  var note = document.getElementById('yearsNote'), g = document.getElementById('gender').value;
+  if (g === 'e-kitten') { note.style.color = 'var(--success)'; note.textContent = '\u2713 E-Kitten fast track \u2014 experience waived.'; }
+  else if (g === 'male' && v < 10) { note.style.color = 'var(--accent)'; note.textContent = '\u26a0\ufe0f Male applicants require 10+ years. You have ' + v + '.'; }
+  else if (v >= 10) { note.style.color = 'var(--success)'; note.textContent = '\u2713 Meets minimum experience threshold.'; }
+  else { note.style.color = 'var(--muted)'; note.textContent = 'Note: Minimum 10 years required for male applicants.'; }
+  updateProgress();
+}
+
+function adjustVC(d) {
+  var inp = document.getElementById('vcHours'), disp = document.getElementById('vcValue');
+  var v = Math.max(0, Math.min(48, parseInt(inp.value) + d));
+  inp.value = v; disp.textContent = v;
+  updateProgress();
+}
+
+/* ===== СЧЁТЧИКИ СИМВОЛОВ ===== */
+var charPairs = [['servers','serversCount'],['scenario','scenarioCount'],['extraCerts','extraCertsCount'],['stress1','stress1Count'],['stress2','stress2Count'],['stress3','stress3Count'],['finalPitch','finalPitchCount']];
+charPairs.forEach(function(pair) {
+  var el = document.getElementById(pair[0]), cnt = document.getElementById(pair[1]), mx = parseInt(el.getAttribute('maxlength'));
+  el.addEventListener('input', function() {
+    var l = el.value.length;
+    cnt.textContent = l + ' / ' + mx;
+    cnt.className = 'char-count' + (l > mx * 0.9 ? ' danger' : l > mx * 0.7 ? ' warning' : '');
+    updateProgress();
+  });
+});
+
+/* ===== ПРОГРЕСС ===== */
+function updateProgress() {
+  var req = ['discord','age','gender','timezone','education','servers','scenario','stress1','stress2','stress3','oath1','oath2','oath3','oath4','finalPitch'];
+  var f = 0;
+  req.forEach(function(id) { var el = document.getElementById(id); if (el && el.value && el.value.trim() !== '') f++; });
+  if (document.querySelectorAll('input[name="certs"]:checked').length > 0) f += 0.5;
+  if (parseInt(document.getElementById('vcHours').value) > 0) f += 0.5;
+  var pct = Math.min(100, Math.round((f / (req.length + 1)) * 100));
+  var fill = document.getElementById('progressFill');
+  fill.style.width = pct + '%';
+  document.getElementById('progressPercent').textContent = pct + '%';
+  fill.style.background = pct >= 100 ? 'linear-gradient(90deg, var(--success), #00c9ff)' : 'linear-gradient(90deg, var(--accent), var(--accent-secondary))';
+}
+document.querySelectorAll('.form-input, input[name="certs"], #oath1, #oath2, #oath3, #oath4').forEach(function(el) {
+  el.addEventListener('input', updateProgress);
+  el.addEventListener('change', updateProgress);
+});
+
+document.getElementById('gender').addEventListener('change', function() {
+  var g = document.getElementById('gender').value, y = parseInt(document.getElementById('yearsExp').value), note = document.getElementById('yearsNote');
+  if (g === 'e-kitten') { note.style.color = 'var(--success)'; note.textContent = '\u2713 E-Kitten fast track \u2014 experience waived.'; document.getElementById('statusText').textContent = 'Fast Track Activated'; }
+  else if (g === 'male' && y < 10) { note.style.color = 'var(--accent)'; note.textContent = '\u26a0\ufe0f Male applicants require 10+ years. You have ' + y + '.'; document.getElementById('statusText').textContent = 'Accepting Applications'; }
+  else { note.style.color = 'var(--muted)'; note.textContent = 'Note: Minimum 10 years required for male applicants.'; document.getElementById('statusText').textContent = 'Accepting Applications'; }
+  updateProgress();
+});
+
+/* ===== TOAST ===== */
+function showToast(msg, type) {
+  var t = document.getElementById('toast');
+  t.className = 'toast toast-' + type;
+  t.innerHTML = '<i class="fas fa-' + (type === 'error' ? 'circle-exclamation' : 'circle-check') + '"></i> ' + msg;
+  t.classList.add('show');
+  clearTimeout(t._to);
+  t._to = setTimeout(function() { t.classList.remove('show'); }, 4000);
+}
+
+/* ===== ПАРАЛЛАКС ===== */
+document.addEventListener('mousemove', function(e) {
+  var s = document.querySelector('.classified-stamp');
+  var x = (e.clientX / window.innerWidth - 0.5) * 30, y = (e.clientY / window.innerHeight - 0.5) * 30;
+  s.style.transform = 'translate(calc(-50% + ' + x + 'px), calc(-50% + ' + y + 'px)) rotate(-25deg)';
+});
+
+/* ===== ОТПРАВКА ФОРМЫ ===== */
+document.getElementById('appForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  var errors = [];
+  var requiredFields = ['discord','age','gender','timezone','education','servers','scenario','stress1','stress2','stress3','finalPitch'];
+  requiredFields.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el.value || el.value.trim() === '') {
+      errors.push(id);
+      el.style.borderColor = 'var(--accent)';
+      el.style.boxShadow = '0 0 0 3px var(--accent-glow)';
+      setTimeout(function() { el.style.borderColor = ''; el.style.boxShadow = ''; }, 3000);
+    }
+  });
+
+  var age = parseInt(document.getElementById('age').value);
+  if (isNaN(age) || age < 18) { showToast('You must be at least 18 years old.', 'error'); return; }
+
+  var gender = document.getElementById('gender').value;
+  var years = parseInt(document.getElementById('yearsExp').value);
+  if (gender === 'male' && years < 10) { showToast('Male applicants require 10+ years. You have ' + years + '. Denied.', 'error'); return; }
+
+  var oathFail = false;
+  ['oath1','oath2','oath3','oath4'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el.checked) {
+      oathFail = true;
+      el.closest('.custom-check').style.background = 'rgba(255,60,95,0.08)';
+      setTimeout(function() { el.closest('.custom-check').style.background = ''; }, 3000);
+    }
+  });
+  if (oathFail) { showToast('You must agree to all required loyalty oaths.', 'error'); return; }
+  if (errors.length > 0) { showToast('Please fill in all required fields.', 'error'); return; }
+
+  var appData = {
+    discord: document.getElementById('discord').value.trim(),
+    displayName: document.getElementById('displayName').value.trim(),
+    age: age,
+    gender: gender,
+    timezone: document.getElementById('timezone').value,
+    years: years,
+    education: document.getElementById('education').value,
+    servers: document.getElementById('servers').value.trim(),
+    scenario: document.getElementById('scenario').value.trim(),
+    extraCerts: document.getElementById('extraCerts').value.trim(),
+    stress1: document.getElementById('stress1').value.trim(),
+    stress2: document.getElementById('stress2').value.trim(),
+    stress3: document.getElementById('stress3').value.trim(),
+    vcHours: parseInt(document.getElementById('vcHours').value),
+    finalPitch: document.getElementById('finalPitch').value.trim()
+  };
+
+  var btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>ENCRYPTING & TRANSMITTING...</span>';
+
+  var result = await sendToWebhook(appData);
+
+  if (gender === 'e-kitten') {
+    document.getElementById('successTitle').textContent = 'WELCOME, E-KITTEN';
+    document.getElementById('successText').textContent = 'Your application has been fast-tracked. You are now part of the family.';
+  } else {
+    document.getElementById('successTitle').textContent = 'APPLICATION TRANSMITTED';
+    document.getElementById('successText').textContent = 'Your application has been securely encrypted and forwarded to the High Council. Expect a response within 3-47 business days.';
+  }
+
+  if (result.ok) {
+    document.getElementById('successWebhookNote').style.display = 'flex';
+    document.getElementById('successFailNote').style.display = 'none';
+  } else {
+    document.getElementById('successWebhookNote').style.display = 'none';
+    document.getElementById('successFailNote').style.display = 'flex';
+    document.getElementById('failText').textContent = 'Webhook failed: ' + (result.error || 'Unknown error');
+  }
+
+  document.getElementById('successOverlay').classList.add('active');
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fas fa-paper-plane"></i> <span>TRANSMIT APPLICATION</span>';
+});
+
+function resetApplication() {
+  document.getElementById('successOverlay').classList.remove('active');
+  document.getElementById('appForm').reset();
+  document.getElementById('yearsValue').textContent = '9';
+  document.getElementById('yearsExp').value = '9';
+  document.getElementById('vcValue').textContent = '0';
+  document.getElementById('vcHours').value = '0';
+  document.querySelectorAll('.char-count').forEach(function(c) {
+    var m = c.textContent.split('/')[1] ? c.textContent.split('/')[1].trim() : '0';
+    c.textContent = '0 / ' + m;
+    c.className = 'char-count';
+  });
+  document.getElementById('progressFill').style.width = '0%';
+  document.getElementById('progressPercent').textContent = '0%';
+  document.getElementById('progressFill').style.background = 'linear-gradient(90deg, var(--accent), var(--accent-secondary))';
+  document.getElementById('yearsNote').style.color = 'var(--muted)';
+  document.getElementById('yearsNote').textContent = 'Note: Minimum 10 years required for male applicants.';
+  document.getElementById('statusText').textContent = 'Accepting Applications';
+  document.getElementById('successWebhookNote').style.display = 'none';
+  document.getElementById('successFailNote').style.display = 'none';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+updateProgress();
+</script>
+</body>
+</html>
